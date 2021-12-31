@@ -57,7 +57,9 @@ public class Permutation<T> implements Iterable<List<T>>, IPermutation<T> {
      * @implNote For iterating all permutations is used
      * (<a href=https://en.wikipedia.org/wiki/Steinhaus–Johnson–Trotter_algorithm#Even's_speedup>Steinhaus-Johnson-Trotter algorithm with Even's speedup</a>).
      */
-    private class PermutationIterator implements Iterator<List<T>> {
+    private static class PermutationIterator<T> implements Iterator<List<T>> {
+
+        private final T[] elements;
 
         private final int[] indexes;
         private final byte[] directions;
@@ -68,7 +70,8 @@ public class Permutation<T> implements Iterable<List<T>>, IPermutation<T> {
         private final static byte RIGHT_DIRECTION = Byte.MAX_VALUE;
         private final static byte NO_DIRECTION = 0;
 
-        private PermutationIterator() {
+        private PermutationIterator(T[] elements) {
+            this.elements = elements;
             this.indexes = new int[elements.length];
             this.directions = new byte[elements.length];
             this.currentIndex = 0;
@@ -229,7 +232,7 @@ public class Permutation<T> implements Iterable<List<T>>, IPermutation<T> {
      * generation in lexicographic order. However, {@link #elements} can be incomparable ({@link #comparator} is null),
      * so for maintaining lexicographic order is used indexes of {@link #elements}.
      */
-    private class PermutationSpliterator implements Spliterator<List<T>> {
+    private static class PermutationSpliterator<T> implements Spliterator<List<T>> {
 
         /**
          * Indexes of the {@link #elements} by which the permutations are iterated in lexicographic order. An algorithm
@@ -285,8 +288,11 @@ public class Permutation<T> implements Iterable<List<T>>, IPermutation<T> {
          */
         private final Comparator<List<T>> listComparator;
 
-        private PermutationSpliterator(int[] indexes, BigInteger currentPosition, BigInteger endPosition,
+        private final T[] elements;
+
+        private PermutationSpliterator(T[] elements, int[] indexes, BigInteger currentPosition, BigInteger endPosition,
                                        Comparator<List<T>> listComparator) {
+            this.elements = elements;
             this.indexes = indexes;
             this.currentPosition = currentPosition;
             this.endPosition = endPosition;
@@ -438,7 +444,7 @@ public class Permutation<T> implements Iterable<List<T>>, IPermutation<T> {
             size /= 2;
             BigInteger end = currentPosition.add(BigInteger.valueOf(size));
             int[] indexes = Arrays.copyOf(this.indexes, this.indexes.length);
-            Spliterator<List<T>> spliterator = new PermutationSpliterator(indexes, currentPosition, end, listComparator);
+            Spliterator<List<T>> spliterator = new PermutationSpliterator<>(elements, indexes, currentPosition, end, listComparator);
             currentPosition = end;
 
             createNewBase(end);
@@ -682,7 +688,7 @@ public class Permutation<T> implements Iterable<List<T>>, IPermutation<T> {
      */
     @Override
     public Iterator<List<T>> iterator() {
-        return new PermutationIterator();
+        return new PermutationIterator<>(elements);
     }
 
     /**
@@ -699,7 +705,7 @@ public class Permutation<T> implements Iterable<List<T>>, IPermutation<T> {
         int[] array = getNaturalNumberSeries(0, elements.length);
         Comparator<List<T>> listComparator = getListComparator(this.comparator);
 
-        return new PermutationSpliterator(array, BigInteger.ZERO, size(), listComparator);
+        return new PermutationSpliterator<>(elements, array, BigInteger.ZERO, size(), listComparator);
     }
 
     /**
